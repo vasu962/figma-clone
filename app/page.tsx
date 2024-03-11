@@ -20,6 +20,7 @@ import { ActiveElement } from '@/types/type';
 import { useMutation, useRedo, useStorage, useUndo } from '@/liveblocks.config';
 import { defaultNavElement } from '@/constants';
 import { handleDelete, handleKeyDown } from '@/lib/key-events';
+import { handleImageUpload } from '@/lib/shapes';
 
 export default function Page() {
   const undo = useUndo();
@@ -31,6 +32,8 @@ export default function Page() {
   const shapeRef = useRef<fabric.Object | null>(null);
   const selectedShapeRef = useRef<string | null>(null);
   const activeObjectRef = useRef<fabric.Object | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
   const canvasObjects = useStorage((root) => root.canvasObjects);
 
   const syncShapeInStorage = useMutation(({ storage }, object) => {
@@ -80,6 +83,14 @@ export default function Page() {
       case 'delete':
         handleDelete(fabricRef.current as any, deleteShapeFromStorage)
         setActiveElement(defaultNavElement)
+        break;
+      case 'image':
+        imageInputRef.current?.click();
+        isDrawing.current = false;
+
+        if(fabricRef.current){
+          fabricRef.current.isDrawingMode = false;
+        }
         break;
       default:
         break;
@@ -164,6 +175,17 @@ export default function Page() {
       <Navbar
         activeElement={activeElement}
         handleActiveElement={handleActiveElement}
+        imageInputRef={imageInputRef}
+        handleImageUpload={(e: any) => {
+          e.preventDefault();
+
+          handleImageUpload({
+            file: e.target.files[0],
+            canvas: fabricRef as any,
+            shapeRef,
+            syncShapeInStorage
+          })
+        }}
       />
       <section className="flex h-full flex-row">
         <LeftSidebar allShapes={Array.from(canvasObjects)}/>
